@@ -159,6 +159,30 @@ class QuizGame:
 
         print("\n  ✅ 퀴즈가 추가되었습니다!")
 
+    def show_quiz_list(self):
+        # 현재 등록된 퀴즈 목록을 출력하는 메서드
+        if not self.quizzes:
+            # 빈 리스트는 False로 평가됨 → 퀴즈가 없는 경우 처리
+            print("\n  📭 등록된 퀴즈가 없습니다.")
+            return
+
+        print(f"\n  📋 등록된 퀴즈 목록 (총 {len(self.quizzes)}개)")
+        print("  ----------------------------------------")
+        for i, quiz in enumerate(self.quizzes, 1):
+            # 문제 번호와 문제 텍스트만 간략하게 표시
+            print(f"  [{i}] {quiz.question}")
+        print("  ----------------------------------------")
+
+    def show_score(self):
+        # 최고 점수를 출력하는 메서드
+        print("\n  ========================================")
+        if self.best_score == 0:
+            # 한 번도 퀴즈를 풀지 않았을 때
+            print("  📊 아직 퀴즈를 풀지 않았습니다.")
+        else:
+            print(f"  🏆 최고 점수: {self.best_score}점")
+        print("  ========================================")
+
     def show_menu(self):
         # 메인 메뉴 화면을 출력하는 메서드
         print("\n  ========================================")
@@ -206,9 +230,9 @@ class QuizGame:
                 elif choice == 2:
                     self.add_quiz()
                 elif choice == 3:
-                    print("  (퀴즈 목록 - 추후 구현)")
+                    self.show_quiz_list()
                 elif choice == 4:
-                    print("  (점수 확인 - 추후 구현)")
+                    self.show_score()
                 elif choice == 5:
                     print("\n  👋 프로그램을 종료합니다. 수고하셨습니다!")
                     break  # while 루프 종료
