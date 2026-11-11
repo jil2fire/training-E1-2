@@ -51,9 +51,57 @@ class QuizGame:
 
     def __init__(self):
         # 게임 시작 시 초기화
+        self.quizzes = []    # 퀴즈 목록 (Quiz 객체들의 리스트)
         self.best_score = 0  # 최고 점수 (정수, 0으로 시작)
-        # 기본 퀴즈로 초기화 (나중에 load_data()로 교체 예정)
-        self.quizzes = self.get_default_quizzes()
+        self.load_data()     # 저장된 파일이 있으면 데이터 불러오기
+
+    def load_data(self):
+        # state.json 파일에서 퀴즈 목록과 최고 점수를 불러오는 메서드
+        if not os.path.exists(self.FILE_PATH):
+            # os.path.exists(): 파일이 존재하는지 확인 (없으면 False)
+            # 파일이 없으면 기본 퀴즈 데이터 사용 (첫 실행 상황)
+            self.quizzes = self.get_default_quizzes()
+            return
+
+        try:
+            # with open(): 파일을 안전하게 열고, 블록이 끝나면 자동으로 닫음
+            # encoding="utf-8": 한글 깨짐 방지
+            with open(self.FILE_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)  # JSON 텍스트 → 파이썬 딕셔너리로 변환
+
+            # 불러온 딕셔너리의 "quizzes" 항목을 Quiz 객체 리스트로 변환
+            self.quizzes = [Quiz.from_dict(q) for q in data.get("quizzes", [])]
+            # .get("key", 기본값): 해당 키가 없을 때 기본값 사용 (오류 방지)
+            self.best_score = data.get("best_score", 0)
+
+            print(f"  📂 저장된 데이터를 불러왔습니다. "
+                  f"(퀴즈 {len(self.quizzes)}개, 최고점수 {self.best_score}점)")
+
+        except (json.JSONDecodeError, KeyError):
+            # json.JSONDecodeError: 파일 내용이 올바른 JSON 형식이 아닐 때
+            # KeyError: 필요한 키가 딕셔너리에 없을 때
+            # → 파일이 손상된 경우 기본 데이터로 복구
+            print("  ⚠️  데이터 파일이 손상되었습니다. 기본 퀴즈로 초기화합니다.")
+            self.quizzes = self.get_default_quizzes()
+            self.best_score = 0
+
+    def save_data(self):
+        # 현재 퀴즈 목록과 최고 점수를 state.json에 저장하는 메서드
+        try:
+            data = {
+                # Quiz 객체 → 딕셔너리로 변환한 리스트
+                "quizzes": [q.to_dict() for q in self.quizzes],
+                "best_score": self.best_score
+            }
+            with open(self.FILE_PATH, "w", encoding="utf-8") as f:
+                # json.dump(): 파이썬 딕셔너리 → JSON 텍스트로 파일에 저장
+                # ensure_ascii=False: 한글을 유니코드 코드가 아닌 한글 그대로 저장
+                # indent=4: 보기 좋게 4칸 들여쓰기
+                json.dump(data, f, ensure_ascii=False, indent=4)
+
+        except IOError as e:
+            # IOError: 파일 쓰기 권한이 없거나 디스크가 꽉 찼을 때
+            print(f"  ⚠️  저장 중 오류가 발생했습니다: {e}")
 
     def get_default_quizzes(self):
         # 파일이 없거나 손상됐을 때 사용할 기본 퀴즈 목록을 반환하는 메서드
@@ -123,10 +171,11 @@ class QuizGame:
         print(f"\n  ========================================")
         print(f"  🏆 결과: {total}문제 중 {correct}문제 정답! ({score}점)")
 
-        # 최고 점수보다 높으면 갱신
+        # 최고 점수보다 높으면 갱신 후 즉시 저장
         if score > self.best_score:
             self.best_score = score
             print("  🎉 새로운 최고 점수입니다!")
+            self.save_data()  # 최고 점수 갱신 시 파일에 저장
         print("  ========================================")
 
     def add_quiz(self):
@@ -156,6 +205,7 @@ class QuizGame:
         # Quiz 객체 생성 후 퀴즈 목록에 추가
         new_quiz = Quiz(question, choices, answer)
         self.quizzes.append(new_quiz)
+        self.save_data()  # 추가 직후 파일에 저장
 
         print("\n  ✅ 퀴즈가 추가되었습니다!")
 
@@ -235,15 +285,19 @@ class QuizGame:
                     self.show_score()
                 elif choice == 5:
                     print("\n  👋 프로그램을 종료합니다. 수고하셨습니다!")
+                    self.save_data()  # 종료 전 데이터 저장
                     break  # while 루프 종료
 
         except KeyboardInterrupt:
             # Ctrl+C를 눌렀을 때 발생하는 예외
-            print("\n\n  ⚠️  프로그램이 중단되었습니다.")
+            # 프로그램이 갑자기 꺼지지 않도록 안전하게 처리
+            print("\n\n  ⚠️  프로그램이 중단되었습니다. 데이터를 저장합니다...")
+            self.save_data()
 
         except EOFError:
-            # 입력 스트림이 끊겼을 때 발생하는 예외
-            print("\n\n  ⚠️  입력이 종료되었습니다.")
+            # 입력 스트림이 끊겼을 때 발생하는 예외 (파이프 입력 종료 등)
+            print("\n\n  ⚠️  입력이 종료되었습니다. 데이터를 저장합니다...")
+            self.save_data()
 
 
 # ============================================================
