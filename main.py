@@ -90,10 +90,73 @@ class QuizGame:
         ]
 
 
+    def show_menu(self):
+        # 메인 메뉴 화면을 출력하는 메서드
+        print("\n  ========================================")
+        print("         🎯 코디세이 올인원 퀴즈 🎯")
+        print("  ========================================")
+        print("    1. 퀴즈 풀기")
+        print("    2. 퀴즈 추가")
+        print("    3. 퀴즈 목록")
+        print("    4. 점수 확인")
+        print("    5. 종료")
+        print("  ========================================")
+
+    def get_int_input(self, prompt, min_val, max_val):
+        # 정수 입력을 안전하게 받는 공통 메서드
+        # 잘못된 입력(문자, 빈값, 범위 초과)이면 메시지 출력 후 재입력 요청
+        while True:  # 올바른 입력이 들어올 때까지 반복
+            try:
+                user_input = input(prompt).strip()  # .strip(): 앞뒤 공백 제거
+
+                if not user_input:
+                    # 빈 입력 (그냥 Enter만 눌렀을 때)
+                    print(f"  ⚠️  값을 입력해주세요.")
+                    continue  # while 루프 처음으로 돌아가 재입력
+
+                num = int(user_input)  # 문자열 → 정수 변환 시도
+
+                if min_val <= num <= max_val:
+                    return num  # 유효한 범위면 값 반환 후 메서드 종료
+                else:
+                    print(f"  ⚠️  {min_val}~{max_val} 사이의 숫자를 입력하세요.")
+
+            except ValueError:
+                # int() 변환 실패 시 발생 (예: "abc", "1.5" 등)
+                print(f"  ⚠️  숫자를 입력해주세요.")
+
+    def run(self):
+        # 게임의 메인 루프: 종료를 선택할 때까지 메뉴를 반복 출력
+        try:
+            while True:  # 무한 반복 (break로 빠져나감)
+                self.show_menu()
+                choice = self.get_int_input("  선택: ", 1, 5)
+
+                if choice == 1:
+                    print("  (퀴즈 풀기 - 추후 구현)")
+                elif choice == 2:
+                    print("  (퀴즈 추가 - 추후 구현)")
+                elif choice == 3:
+                    print("  (퀴즈 목록 - 추후 구현)")
+                elif choice == 4:
+                    print("  (점수 확인 - 추후 구현)")
+                elif choice == 5:
+                    print("\n  👋 프로그램을 종료합니다. 수고하셨습니다!")
+                    break  # while 루프 종료
+
+        except KeyboardInterrupt:
+            # Ctrl+C를 눌렀을 때 발생하는 예외
+            print("\n\n  ⚠️  프로그램이 중단되었습니다.")
+
+        except EOFError:
+            # 입력 스트림이 끊겼을 때 발생하는 예외
+            print("\n\n  ⚠️  입력이 종료되었습니다.")
+
+
 # ============================================================
 # 프로그램 진입점
 # ============================================================
 if __name__ == "__main__":
     # 이 파일을 직접 실행했을 때만 아래 코드가 실행됨
     game = QuizGame()  # QuizGame 객체 생성
-    print("QuizGame 시작 준비 완료!")  # 임시 출력 (나중에 game.run()으로 교체)
+    game.run()         # 게임 시작
