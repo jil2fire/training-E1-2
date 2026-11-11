@@ -129,6 +129,36 @@ class QuizGame:
             print("  🎉 새로운 최고 점수입니다!")
         print("  ========================================")
 
+    def add_quiz(self):
+        # 새로운 퀴즈를 입력받아 목록에 추가하는 메서드
+        print("\n  📌 새로운 퀴즈를 추가합니다.")
+
+        # 문제 입력 (빈 값이면 재입력 요청)
+        while True:
+            question = input("\n  문제를 입력하세요: ").strip()
+            if question:
+                break  # 내용이 있으면 반복 종료
+            print("  ⚠️  문제를 입력해주세요.")
+
+        # 선택지 4개 입력
+        choices = []  # 선택지를 담을 빈 리스트
+        for i in range(1, 5):  # 1, 2, 3, 4 반복
+            while True:
+                choice = input(f"  선택지 {i}: ").strip()
+                if choice:
+                    choices.append(choice)  # 리스트에 선택지 추가
+                    break
+                print("  ⚠️  선택지를 입력해주세요.")
+
+        # 정답 번호 입력 (공통 입력 처리 메서드 사용)
+        answer = self.get_int_input("  정답 번호 (1-4): ", 1, 4)
+
+        # Quiz 객체 생성 후 퀴즈 목록에 추가
+        new_quiz = Quiz(question, choices, answer)
+        self.quizzes.append(new_quiz)
+
+        print("\n  ✅ 퀴즈가 추가되었습니다!")
+
     def show_menu(self):
         # 메인 메뉴 화면을 출력하는 메서드
         print("\n  ========================================")
@@ -174,7 +204,7 @@ class QuizGame:
                 if choice == 1:
                     self.play_quiz()
                 elif choice == 2:
-                    print("  (퀴즈 추가 - 추후 구현)")
+                    self.add_quiz()
                 elif choice == 3:
                     print("  (퀴즈 목록 - 추후 구현)")
                 elif choice == 4:
