@@ -13,6 +13,34 @@ class Quiz:
         self.choices = choices    # 선택지 리스트 (list, 4개)
         self.answer = answer      # 정답 번호 (int, 1~4)
 
+    def display(self):
+        # 문제와 선택지를 화면에 출력하는 메서드
+        print(f"\n  {self.question}")
+        for i, choice in enumerate(self.choices, 1):
+            # enumerate: 리스트를 순서 번호와 함께 반복
+            # 1부터 시작(start=1)해서 1.선택지1, 2.선택지2... 형태로 출력
+            print(f"    {i}. {choice}")
+
+    def check_answer(self, user_answer):
+        # 사용자가 입력한 번호가 정답과 같은지 확인하는 메서드
+        # 같으면 True, 다르면 False 반환
+        return self.answer == user_answer
+
+    def to_dict(self):
+        # Quiz 객체를 딕셔너리(dict)로 변환하는 메서드
+        # JSON 파일에 저장하려면 딕셔너리 형태가 필요하기 때문
+        return {
+            "question": self.question,
+            "choices": self.choices,
+            "answer": self.answer
+        }
+
+    @staticmethod
+    def from_dict(data):
+        # 딕셔너리에서 Quiz 객체를 만드는 정적 메서드 (JSON 불러오기 전용)
+        # @staticmethod: self 없이 클래스 이름으로 직접 호출 가능
+        return Quiz(data["question"], data["choices"], data["answer"])
+
 
 # ============================================================
 # QuizGame 클래스: 게임 전체 흐름을 관리하는 클래스
