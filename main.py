@@ -51,8 +51,9 @@ class QuizGame:
 
     def __init__(self):
         # 게임 시작 시 초기화
-        self.quizzes = []    # 퀴즈 목록 (Quiz 객체들의 리스트)
         self.best_score = 0  # 최고 점수 (정수, 0으로 시작)
+        # 기본 퀴즈로 초기화 (나중에 load_data()로 교체 예정)
+        self.quizzes = self.get_default_quizzes()
 
     def get_default_quizzes(self):
         # 파일이 없거나 손상됐을 때 사용할 기본 퀴즈 목록을 반환하는 메서드
@@ -89,6 +90,44 @@ class QuizGame:
             ),
         ]
 
+
+    def play_quiz(self):
+        # 퀴즈를 순서대로 출제하고 결과를 보여주는 메서드
+        if not self.quizzes:
+            # 퀴즈 목록이 비어있을 때 (빈 리스트는 False로 평가됨)
+            print("\n  📭 등록된 퀴즈가 없습니다. 먼저 퀴즈를 추가해주세요.")
+            return  # 메서드 조기 종료
+
+        total = len(self.quizzes)  # 전체 문제 수
+        correct = 0                # 맞춘 문제 수 (0으로 초기화)
+
+        print(f"\n  📝 퀴즈를 시작합니다! (총 {total}문제)")
+
+        for i, quiz in enumerate(self.quizzes, 1):
+            # enumerate: (인덱스, 값) 쌍으로 반복, 1부터 번호 시작
+            print(f"\n  ----------------------------------------")
+            print(f"  [문제 {i}/{total}]")
+            quiz.display()  # 문제와 선택지 출력
+
+            user_answer = self.get_int_input("\n  정답 입력 (1-4): ", 1, 4)
+
+            if quiz.check_answer(user_answer):
+                print("  ✅ 정답입니다!")
+                correct += 1  # 정답이면 카운터 증가
+            else:
+                print(f"  ❌ 오답입니다. 정답은 {quiz.answer}번이었습니다.")
+
+        # 점수 계산: 정답 수 / 전체 문제 수 × 100 (백분율)
+        score = int((correct / total) * 100)
+
+        print(f"\n  ========================================")
+        print(f"  🏆 결과: {total}문제 중 {correct}문제 정답! ({score}점)")
+
+        # 최고 점수보다 높으면 갱신
+        if score > self.best_score:
+            self.best_score = score
+            print("  🎉 새로운 최고 점수입니다!")
+        print("  ========================================")
 
     def show_menu(self):
         # 메인 메뉴 화면을 출력하는 메서드
@@ -133,7 +172,7 @@ class QuizGame:
                 choice = self.get_int_input("  선택: ", 1, 5)
 
                 if choice == 1:
-                    print("  (퀴즈 풀기 - 추후 구현)")
+                    self.play_quiz()
                 elif choice == 2:
                     print("  (퀴즈 추가 - 추후 구현)")
                 elif choice == 3:
