@@ -85,3 +85,6 @@ E1-2/
 | 퀴즈 풀기 | `docs/screenshots/play.png` |
 | 퀴즈 추가 | `docs/screenshots/add_quiz.png` |
 | 점수 확인 | `docs/screenshots/score.png` |
+
+---
+> 📌 clone/pull 실습: 복제된 저장소에서 변경 후 push
