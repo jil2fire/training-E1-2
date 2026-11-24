@@ -1,5 +1,6 @@
 import json  # JSON 파일 읽기/쓰기를 위한 표준 라이브러리
 import os    # 파일 존재 여부 확인을 위한 표준 라이브러리
+from datetime import datetime  # 현재 날짜/시간을 위한 표준 라이브러리
 
 
 # ============================================================
@@ -53,6 +54,7 @@ class QuizGame:
         # 게임 시작 시 초기화
         self.quizzes = []    # 퀴즈 목록 (Quiz 객체들의 리스트)
         self.best_score = 0  # 최고 점수 (정수, 0으로 시작)
+        self.scores = []     # 점수 기록 리스트 (닉네임, 점수, 타임스탬프)
         self.load_data()     # 저장된 파일이 있으면 데이터 불러오기
 
     def load_data(self):
@@ -73,6 +75,7 @@ class QuizGame:
             self.quizzes = [Quiz.from_dict(q) for q in data.get("quizzes", [])]
             # .get("key", 기본값): 해당 키가 없을 때 기본값 사용 (오류 방지)
             self.best_score = data.get("best_score", 0)
+            self.scores = data.get("scores", [])
 
             print(f"  📂 저장된 데이터를 불러왔습니다. "
                   f"(퀴즈 {len(self.quizzes)}개, 최고점수 {self.best_score}점)")
@@ -86,12 +89,13 @@ class QuizGame:
             self.best_score = 0
 
     def save_data(self):
-        # 현재 퀴즈 목록과 최고 점수를 state.json에 저장하는 메서드
+        # 현재 퀴즈 목록과 최고 점수, 점수 기록을 state.json에 저장하는 메서드
         try:
             data = {
                 # Quiz 객체 → 딕셔너리로 변환한 리스트
                 "quizzes": [q.to_dict() for q in self.quizzes],
-                "best_score": self.best_score
+                "best_score": self.best_score,
+                "scores": self.scores
             }
             with open(self.FILE_PATH, "w", encoding="utf-8") as f:
                 # json.dump(): 파이썬 딕셔너리 → JSON 텍스트로 파일에 저장
@@ -171,20 +175,42 @@ class QuizGame:
         print(f"\n  ========================================")
         print(f"  🏆 결과: {total}문제 중 {correct}문제 정답! ({score}점)")
 
-        # 최고 점수보다 높으면 갱신 후 즉시 저장
+        # 최고 점수보다 높으면 갱신
         if score > self.best_score:
             self.best_score = score
             print("  🎉 새로운 최고 점수입니다!")
-            self.save_data()  # 최고 점수 갱신 시 파일에 저장
         print("  ========================================")
+
+        # 닉네임 입력받기
+        while True:
+            nickname = input("\n  닉네임을 입력하세요: ").strip()
+            if nickname:
+                break
+            print("  ⚠️  닉네임을 입력해주세요.")
+
+        # 현재 시간을 타임스탬프로 기록
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # 점수 기록 추가
+        score_record = {
+            "nickname": nickname,
+            "score": score,
+            "timestamp": timestamp
+        }
+        self.scores.append(score_record)
+        self.save_data()  # 점수 기록 저장
 
     def add_quiz(self):
         # 새로운 퀴즈를 입력받아 목록에 추가하는 메서드
         print("\n  📌 새로운 퀴즈를 추가합니다.")
+        print("  (메뉴로 돌아가려면 'q'를 입력하세요)")
 
         # 문제 입력 (빈 값이면 재입력 요청)
         while True:
             question = input("\n  문제를 입력하세요: ").strip()
+            if question.lower() == 'q':
+                print("  ❌ 취소하고 메뉴로 돌아갑니다.")
+                return
             if question:
                 break  # 내용이 있으면 반복 종료
             print("  ⚠️  문제를 입력해주세요.")
@@ -194,6 +220,9 @@ class QuizGame:
         for i in range(1, 5):  # 1, 2, 3, 4 반복
             while True:
                 choice = input(f"  선택지 {i}: ").strip()
+                if choice.lower() == 'q':
+                    print("  ❌ 취소하고 메뉴로 돌아갑니다.")
+                    return
                 if choice:
                     choices.append(choice)  # 리스트에 선택지 추가
                     break
@@ -208,6 +237,83 @@ class QuizGame:
         self.save_data()  # 추가 직후 파일에 저장
 
         print("\n  ✅ 퀴즈가 추가되었습니다!")
+
+    def delete_quiz(self):
+        # 등록된 퀴즈 중 선택해서 삭제하는 메서드
+        if not self.quizzes:
+            print("\n  📭 등록된 퀴즈가 없습니다.")
+            return
+
+        print("\n  📌 삭제할 퀴즈를 선택하세요.")
+        print("  (메뉴로 돌아가려면 0을 입력하세요)")
+        self.show_quiz_list()
+
+        quiz_num = self.get_int_input("\n  삭제할 퀴즈 번호를 입력하세요: ", 0, len(self.quizzes))
+
+        if quiz_num == 0:
+            print("  ❌ 취소하고 메뉴로 돌아갑니다.")
+            return
+
+        deleted_quiz = self.quizzes.pop(quiz_num - 1)  # 1부터 시작하므로 -1
+        self.save_data()
+
+        print(f"\n  ✅ 퀴즈가 삭제되었습니다: {deleted_quiz.question}")
+
+    def update_quiz(self):
+        # 등록된 퀴즈 중 선택해서 수정하는 메서드
+        if not self.quizzes:
+            print("\n  📭 등록된 퀴즈가 없습니다.")
+            return
+
+        print("\n  📌 수정할 퀴즈를 선택하세요.")
+        print("  (메뉴로 돌아가려면 0을 입력하세요)")
+        self.show_quiz_list()
+
+        quiz_num = self.get_int_input("\n  수정할 퀴즈 번호를 입력하세요: ", 0, len(self.quizzes))
+
+        if quiz_num == 0:
+            print("  ❌ 취소하고 메뉴로 돌아갑니다.")
+            return
+
+        quiz_index = quiz_num - 1
+        old_quiz = self.quizzes[quiz_index]
+
+        print(f"\n  📌 '{old_quiz.question}' 퀴즈를 수정합니다.")
+        print("  (메뉴로 돌아가려면 'q'를 입력하세요)")
+
+        # 문제 입력
+        while True:
+            question = input("\n  새로운 문제를 입력하세요 (기존: 엔터 유지): ").strip()
+            if question.lower() == 'q':
+                print("  ❌ 취소하고 메뉴로 돌아갑니다.")
+                return
+            if question:
+                break
+            question = old_quiz.question
+            break
+
+        # 선택지 4개 입력
+        choices = []
+        for i in range(1, 5):
+            while True:
+                choice = input(f"  선택지 {i} (기존: 엔터 유지): ").strip()
+                if choice.lower() == 'q':
+                    print("  ❌ 취소하고 메뉴로 돌아갑니다.")
+                    return
+                if choice:
+                    choices.append(choice)
+                    break
+                choices.append(old_quiz.choices[i - 1])
+                break
+
+        # 정답 번호 입력
+        answer = self.get_int_input("  정답 번호 (1-4): ", 1, 4)
+
+        # 퀴즈 업데이트
+        self.quizzes[quiz_index] = Quiz(question, choices, answer)
+        self.save_data()
+
+        print("\n  ✅ 퀴즈가 수정되었습니다!")
 
     def show_quiz_list(self):
         # 현재 등록된 퀴즈 목록을 출력하는 메서드
@@ -224,13 +330,22 @@ class QuizGame:
         print("  ----------------------------------------")
 
     def show_score(self):
-        # 최고 점수를 출력하는 메서드
+        # 모든 점수 기록을 점수 순으로 출력하는 메서드
         print("\n  ========================================")
-        if self.best_score == 0:
-            # 한 번도 퀴즈를 풀지 않았을 때
+        if not self.scores:
             print("  📊 아직 퀴즈를 풀지 않았습니다.")
         else:
-            print(f"  🏆 최고 점수: {self.best_score}점")
+            # 점수를 높은 순서대로 정렬 (key=lambda x: x["score"], reverse=True)
+            sorted_scores = sorted(self.scores, key=lambda x: x["score"], reverse=True)
+
+            print(f"  📊 점수 기록 (총 {len(self.scores)}회)")
+            print("  ----------------------------------------")
+            for i, record in enumerate(sorted_scores, 1):
+                nickname = record["nickname"]
+                score = record["score"]
+                timestamp = record["timestamp"]
+                print(f"  [{i}] {nickname}: {score}점 ({timestamp})")
+            print("  ----------------------------------------")
         print("  ========================================")
 
     def show_menu(self):
@@ -240,9 +355,11 @@ class QuizGame:
         print("  ========================================")
         print("    1. 퀴즈 풀기")
         print("    2. 퀴즈 추가")
-        print("    3. 퀴즈 목록")
-        print("    4. 점수 확인")
-        print("    5. 종료")
+        print("    3. 퀴즈 삭제")
+        print("    4. 퀴즈 목록")
+        print("    5. 퀴즈 수정")
+        print("    6. 점수 확인")
+        print("    7. 종료")
         print("  ========================================")
 
     def get_int_input(self, prompt, min_val, max_val):
@@ -273,17 +390,21 @@ class QuizGame:
         try:
             while True:  # 무한 반복 (break로 빠져나감)
                 self.show_menu()
-                choice = self.get_int_input("  선택: ", 1, 5)
+                choice = self.get_int_input("  선택: ", 1, 7)
 
                 if choice == 1:
                     self.play_quiz()
                 elif choice == 2:
                     self.add_quiz()
                 elif choice == 3:
-                    self.show_quiz_list()
+                    self.delete_quiz()
                 elif choice == 4:
-                    self.show_score()
+                    self.show_quiz_list()
                 elif choice == 5:
+                    self.update_quiz()
+                elif choice == 6:
+                    self.show_score()
+                elif choice == 7:
                     print("\n  👋 프로그램을 종료합니다. 수고하셨습니다!")
                     self.save_data()  # 종료 전 데이터 저장
                     break  # while 루프 종료
