@@ -109,6 +109,7 @@ class QuizGame:
 
     def get_default_quizzes(self):
         # 파일이 없거나 손상됐을 때 사용할 기본 퀴즈 목록을 반환하는 메서드
+        # 반환: 6개의 기본 퀴즈 (최소 요구사항: 5개 이상)
         return [
             Quiz(
                 "코디세이 올인원 입학 연수 과정에서 부여받은 미션 갯수 (개인 미션, 팀 미션 포함)",
@@ -181,12 +182,20 @@ class QuizGame:
             print("  🎉 새로운 최고 점수입니다!")
         print("  ========================================")
 
-        # 닉네임 입력받기
+        # 닉네임 입력받기 (유효성: 1~20자, 한글/영문/숫자/언더스코어만 허용)
         while True:
-            nickname = input("\n  닉네임을 입력하세요: ").strip()
-            if nickname:
-                break
-            print("  ⚠️  닉네임을 입력해주세요.")
+            nickname = input("\n  닉네임을 입력하세요 (1~20자, 한글/영문/숫자/_): ").strip()
+            if not nickname:
+                print("  ⚠️  닉네임을 입력해주세요.")
+                continue
+            if len(nickname) > 20:
+                print("  ⚠️  닉네임은 20자 이내여야 합니다.")
+                continue
+            # 한글, 영문, 숫자, 언더스코어만 허용
+            if not all(c.isalnum() or c.isspace() or c in '_' or ord(c) >= 0xAC00 for c in nickname):
+                print("  ⚠️  닉네임은 한글, 영문, 숫자, 언더스코어만 사용 가능합니다.")
+                continue
+            break
 
         # 현재 시간을 타임스탬프로 기록
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
